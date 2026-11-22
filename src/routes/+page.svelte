@@ -31,7 +31,7 @@
 		if (audio) {
 		audio.addEventListener("timeupdate", () => {
 		  time = audio?.currentTime ?? 0
-		})
+		}) //a
 		audio.volume = volume / 100;}
 	});
 

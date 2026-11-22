@@ -1,7 +1,10 @@
-import adapter from '@sveltejs/adapter-cloudflare';
+import adapterCloudflare from '@sveltejs/adapter-cloudflare';
+import adapterVercel from '@sveltejs/adapter-vercel';
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+
+const isVercel = !!process.env.VERCEL || process.env.DEPLOY_TARGET === 'vercel';
 
 export default defineConfig({
 	plugins: [
@@ -14,8 +17,7 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// See https://svelte.dev/docs/kit/adapter-cloudflare for configuration options.
-			adapter: adapter()
+			adapter: isVercel ? adapterVercel() : adapterCloudflare()
 		})
 	]
 });
