@@ -34,7 +34,7 @@ npx sv add tailwindcss
 
 ## Music library
 
-Downloaded MP3s belong in `static/music`. To move new downloads from the project root into the library and fetch any missing synced lyrics:
+Downloaded MP3s belong in `static/music`. To copy new downloads from the project root into the library and fetch any missing synced lyrics:
 
 ```sh
 npm run music:sync

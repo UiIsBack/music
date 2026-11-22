@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Move root MP3s into static/music and fetch missing synced lyrics.
+"""Copy root MP3s into static/music and fetch missing synced lyrics.
 
 Usage:
     python3 scripts/sync-music.py
@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -39,44 +40,40 @@ def identical(left: Path, right: Path) -> bool:
     return left.stat().st_size == right.stat().st_size and digest(left) == digest(right)
 
 
-def move_sidecar(source: Path, target: Path) -> None:
+def copy_sidecar(source: Path, target: Path) -> None:
     source_lrc = source.with_suffix(".lrc")
     if not source_lrc.exists():
         return
 
     target_lrc = target.with_suffix(".lrc")
-    if target_lrc.exists():
-        if identical(source_lrc, target_lrc):
-            source_lrc.unlink()
-    else:
-        source_lrc.rename(target_lrc)
+    if not target_lrc.exists():
+        shutil.copy2(source_lrc, target_lrc)
 
 
-def move_downloads() -> tuple[int, int, list[str]]:
+def copy_downloads() -> tuple[int, int, list[str]]:
     LIBRARY.mkdir(parents=True, exist_ok=True)
 
-    moved = 0
-    removed = 0
+    copied = 0
+    skipped = 0
     conflicts: list[str] = []
 
     for source in sorted(ROOT.glob("*.mp3")):
         target = LIBRARY / source.name
 
         if not target.exists():
-            source.rename(target)
-            move_sidecar(source, target)
-            moved += 1
-            print(f"moved   {source.name}")
+            shutil.copy2(source, target)
+            copy_sidecar(source, target)
+            copied += 1
+            print(f"copied  {source.name}")
         elif identical(source, target):
-            move_sidecar(source, target)
-            source.unlink()
-            removed += 1
-            print(f"removed {source.name} (identical copy already in library)")
+            copy_sidecar(source, target)
+            skipped += 1
+            print(f"skipped {source.name} (identical copy already in library)")
         else:
             conflicts.append(source.name)
             print(f"skipped {source.name} (different file already in library)")
 
-    return moved, removed, conflicts
+    return copied, skipped, conflicts
 
 
 def lyrics_queries(path: Path) -> list[str]:
@@ -154,7 +151,7 @@ def sync_lyrics(force: bool, retries: int, delay: float, verbose: bool) -> tuple
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--no-move", action="store_true", help="skip moving root MP3s")
+    parser.add_argument("--no-copy", action="store_true", help="skip copying root MP3s")
     parser.add_argument("--no-lyrics", action="store_true", help="skip fetching lyrics")
     parser.add_argument("--force-lyrics", action="store_true", help="overwrite existing .lrc files")
     parser.add_argument("--retries", type=int, default=2, help="attempts per search query (default: 2)")
@@ -162,9 +159,9 @@ def main() -> int:
     parser.add_argument("--verbose", action="store_true", help="show search errors")
     args = parser.parse_args()
 
-    if not args.no_move:
-        moved, removed, conflicts = move_downloads()
-        print(f"\nmoved {moved}, removed {removed} duplicate(s), conflicts {len(conflicts)}")
+    if not args.no_copy:
+        copied, skipped, conflicts = copy_downloads()
+        print(f"\ncopied {copied}, skipped {skipped} duplicate(s), conflicts {len(conflicts)}")
         for name in conflicts:
             print(f"  conflict: {name}")
         print()

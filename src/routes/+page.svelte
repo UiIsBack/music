@@ -10,6 +10,7 @@
 	const tracks = $derived(data.tracks);
 
 	let audio = $state<HTMLAudioElement | null>(null);
+
 	let current = $state(0);
 	let playing = $state(false);
 	let time = $state(0);
@@ -27,8 +28,14 @@
 	let lastActiveLyric = -1;
 
 	$effect(() => {
-		if (audio) audio.volume = volume / 100;
+		if (audio) {
+		audio.addEventListener("timeupdate", () => {
+		  time = audio?.currentTime ?? 0
+		})
+		audio.volume = volume / 100;}
 	});
+
+
 
 	$effect(() => {
 		const src = track.lrc;
@@ -113,6 +120,7 @@
 		audio.src = tracks[index].src;
 		audio.load();
 		void audio.play();
+
 	}
 
 	function toggle() {
@@ -153,7 +161,7 @@
 </script>
 
 <svelte:head>
-	<title>mmm · local music</title>
+	<title> local music</title>
 </svelte:head>
 
 <div class="min-h-svh">
@@ -166,7 +174,7 @@
 					<AudioLines class="size-4" />
 				</div>
 				<div class="leading-tight">
-					<h1 class="text-sm font-semibold tracking-tight">mmm</h1>
+					<h1 class="text-sm font-semibold tracking-tight">Evan {audio}</h1>
 					<p class="text-xs text-muted-foreground">Local library</p>
 				</div>
 			</div>
