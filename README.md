@@ -32,6 +32,14 @@ For example, to add Tailwind CSS:
 npx sv add tailwindcss
 ```
 
+## Music library
+
+Downloaded MP3s belong in `static/music`. To move new downloads from the project root into the library and fetch any missing synced lyrics:
+
+```sh
+npm run music:sync
+```
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:

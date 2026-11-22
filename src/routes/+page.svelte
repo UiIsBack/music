@@ -20,9 +20,83 @@
 
 	const track = $derived(tracks[current]);
 
+	type LyricLine = { time: number | null; text: string };
+
+	let lyrics = $state<LyricLine[] | null>(null);
+	let lyricsBox = $state<HTMLDivElement | null>(null);
+	let lastActiveLyric = -1;
+
 	$effect(() => {
 		if (audio) audio.volume = volume / 100;
 	});
+
+	$effect(() => {
+		const src = track.lrc;
+		lyrics = null;
+		lastActiveLyric = -1;
+		if (!src) return;
+
+		let cancelled = false;
+		fetch(src)
+			.then((res) => (res.ok ? res.text() : null))
+			.then((text) => {
+				if (!cancelled && text) lyrics = parseLrc(text);
+			})
+			.catch(() => {});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	const activeLyric = $derived.by(() => {
+		if (!lyrics) return -1;
+		let active = -1;
+		for (let i = 0; i < lyrics.length; i++) {
+			const at = lyrics[i].time;
+			if (at === null) return -1;
+			if (at <= time) active = i;
+			else break;
+		}
+		return active;
+	});
+
+	$effect(() => {
+		if (!lyricsBox || activeLyric < 0 || activeLyric === lastActiveLyric) return;
+		lastActiveLyric = activeLyric;
+
+		const line = lyricsBox.querySelector<HTMLElement>('[data-active="true"]');
+		if (!line) return;
+
+		const box = lyricsBox.getBoundingClientRect();
+		const rect = line.getBoundingClientRect();
+		lyricsBox.scrollBy({
+			top: rect.top - box.top - lyricsBox.clientHeight / 2 + rect.height / 2,
+			behavior: 'smooth'
+		});
+	});
+
+	function parseLrc(text: string): LyricLine[] {
+		const timed: LyricLine[] = [];
+		const plain: LyricLine[] = [];
+
+		for (const raw of text.split('\n')) {
+			const content = raw.replace(/\[[^\]]*\]/g, '').trim();
+			if (!content) continue;
+
+			const stamps = [...raw.matchAll(/\[(\d{1,2}):(\d{2}(?:\.\d+)?)\]/g)];
+			if (stamps.length === 0) {
+				plain.push({ time: null, text: content });
+				continue;
+			}
+
+			for (const stamp of stamps) {
+				timed.push({ time: Number(stamp[1]) * 60 + Number(stamp[2]), text: content });
+			}
+		}
+
+		return timed.length > 0 ? timed.sort((a, b) => (a.time ?? 0) - (b.time ?? 0)) : plain;
+	}
 
 	function formatTime(seconds: number) {
 		if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -105,6 +179,32 @@
 			<h2 class="text-2xl font-semibold tracking-tight">Your music</h2>
 			<p class="mt-1 text-sm text-muted-foreground">Pick a track to start listening.</p>
 		</div>
+
+		{#if lyrics && lyrics.length > 0}
+			<section class="mb-6 overflow-hidden rounded-xl border border-border/60 bg-muted/20">
+				<div class="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
+					<div class="min-w-0">
+						<p class="truncate text-sm font-medium">{track.title}</p>
+						<p class="truncate text-xs text-muted-foreground">{track.artist}</p>
+					</div>
+					<Badge variant="secondary">Lyrics</Badge>
+				</div>
+				<div bind:this={lyricsBox} class="max-h-72 overflow-y-auto px-4 py-4">
+					<div class="space-y-2">
+						{#each lyrics as line, i}
+							<p
+								data-active={i === activeLyric}
+								class="text-sm leading-relaxed transition-colors {i === activeLyric
+									? 'font-medium text-foreground'
+									: 'text-muted-foreground'}"
+							>
+								{line.text}
+							</p>
+						{/each}
+					</div>
+				</div>
+			</section>
+		{/if}
 
 		<div class="space-y-0.5">
 			{#each tracks as t, i (t.src)}
