@@ -4,7 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
-const isVercel = !!process.env.VERCEL || process.env.DEPLOY_TARGET === 'vercel';
+const isVercel =
+	process.env.DEPLOY_TARGET === 'vercel' ||
+	(Boolean(process.env.VERCEL) && process.env.DEPLOY_TARGET !== 'cloudflare');
 
 export default defineConfig({
 	plugins: [

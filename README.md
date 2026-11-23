@@ -51,14 +51,16 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+## Building & Deployment
 
-To create a production version of your app:
+The project supports both **Cloudflare (via Wrangler)** and **Vercel**.
 
-```sh
-npm run build
-```
+### Cloudflare (Wrangler)
+- Build for Cloudflare: `npm run build:cf` (or default `npm run build`)
+- Preview locally: `npm run preview:wrangler`
+- Deploy: `npm run deploy` (or `npm run deploy:cf`)
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### Vercel
+- Build for Vercel: `npm run build:vercel`
+- Preview locally: `npm run preview:vercel`
+- Deploy: `npm run deploy:vercel` (or run `vercel deploy` / connect your Git repo to Vercel, which detects Vercel automatically)

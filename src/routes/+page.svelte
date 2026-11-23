@@ -161,7 +161,7 @@
 </script>
 
 <svelte:head>
-	<title> local music</title>
+	<title>{playing ? `Playing - ${track.title}` : 'Evan Music'}</title>
 </svelte:head>
 
 <div class="min-h-svh">
